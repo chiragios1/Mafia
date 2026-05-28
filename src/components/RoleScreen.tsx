@@ -1,0 +1,351 @@
+'use client';
+import { Room, Phase, Player } from '@/types/game';
+import { castMafiaVote, doctorSave, policeCheck, castDayVote } from '@/lib/game';
+import { useState } from 'react';
+
+interface Props {
+  room: Room;
+  playerId: string;
+  roomCode: string;
+}
+
+// What each role sees during each phase
+function shouldBeActive(playerRole: string, phase: Phase): boolean {
+  if (phase === 'mafia_wake') return playerRole === 'mafia';
+  if (phase === 'police_wake') return playerRole === 'police';
+  if (phase === 'doctor_wake') return playerRole === 'doctor';
+  if (phase === 'day' || phase === 'vote') return true;
+  return false;
+}
+
+const ROLE_CONFIG = {
+  mafia: { color: 'text-red-400', bg: 'phase-mafia', glow: 'glow-red', icon: '🔪', label: 'MAFIA' },
+  police: { color: 'text-blue-400', bg: 'phase-police', glow: 'glow-blue', icon: '🔍', label: 'DETECTIVE' },
+  doctor: { color: 'text-green-400', bg: 'phase-doctor', glow: 'glow-green', icon: '💊', label: 'DOCTOR' },
+  civilian: { color: 'text-gray-300', bg: 'phase-night', glow: '', icon: '👤', label: 'CIVILIAN' },
+  god: { color: 'text-yellow-400', bg: 'phase-night', glow: 'glow-yellow', icon: '👑', label: 'GOD' },
+};
+
+export default function RoleScreen({ room, playerId, roomCode }: Props) {
+  const player = room.players?.[playerId];
+  if (!player) return null;
+
+  const role = player.role;
+  const phase = room.phase;
+  const config = ROLE_CONFIG[role] || ROLE_CONFIG.civilian;
+  const active = shouldBeActive(role, phase);
+  const players = Object.values(room.players || {});
+  const alivePlayers = players.filter(p => p.isAlive && !p.isGod && p.id !== playerId);
+  const events = room.events || [];
+  const lastEvent = events[events.length - 1];
+
+  if (!player.isAlive) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center phase-night p-6 text-center">
+        <div className="text-6xl mb-4">💀</div>
+        <h2 className="text-2xl font-black text-gray-300 mb-2">You are Dead</h2>
+        <p className="text-gray-500 text-sm">Watch the game unfold...</p>
+        {lastEvent && <p className="text-gray-400 text-sm mt-4 italic">{lastEvent.message}</p>}
+      </div>
+    );
+  }
+
+  // SLEEP SCREEN — shown to all non-active roles during night phases
+  if (['night', 'mafia_wake', 'police_wake', 'doctor_wake'].includes(phase) && !active) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center phase-night p-6 text-center">
+        <div className="text-6xl mb-4 animate-pulse">😴</div>
+        <h2 className="text-xl font-bold text-indigo-300 mb-2">City is Sleeping</h2>
+        <p className="text-gray-500 text-sm">Keep your eyes closed...</p>
+        <div className="mt-6 bg-white/5 border border-white/10 rounded-2xl px-6 py-3">
+          <span className={`text-sm font-bold uppercase tracking-wider ${config.color}`}>
+            {config.icon} {config.label}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // GAME OVER
+  if (phase === 'game_over') {
+    const won =
+      (room.winner === 'mafia' && role === 'mafia') ||
+      (room.winner === 'town' && role !== 'mafia');
+    return (
+      <div className={`min-h-dvh flex flex-col items-center justify-center p-6 text-center ${config.bg}`}>
+        <div className="text-6xl mb-4">{won ? '🏆' : '💔'}</div>
+        <h2 className="text-3xl font-black text-white mb-2">{won ? 'You Win!' : 'You Lose!'}</h2>
+        <p className={`text-sm font-bold uppercase tracking-wider ${config.color}`}>{config.icon} {config.label}</p>
+        <p className="text-gray-400 mt-4 text-sm">
+          {room.winner === 'mafia' ? 'The Mafia took over the city.' : 'The town eliminated all Mafia members.'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`min-h-dvh flex flex-col p-4 pb-8 ${active ? config.bg : 'phase-night'}`}>
+      {/* Role Badge */}
+      <div className="text-center pt-6 pb-4">
+        <div className="text-4xl mb-2">{config.icon}</div>
+        <div className={`text-lg font-black uppercase tracking-widest ${config.color}`}>{config.label}</div>
+        <div className="text-gray-500 text-xs mt-1">Round {room.round}</div>
+      </div>
+
+      {/* Phase-specific content */}
+      {active && (
+        <div className="flex-1">
+          {/* MAFIA VOTING */}
+          {phase === 'mafia_wake' && role === 'mafia' && (
+            <MafiaVotePanel
+              alivePlayers={alivePlayers.filter(p => p.role !== 'mafia')}
+              allMafia={players.filter(p => p.role === 'mafia' && p.id !== playerId && p.isAlive)}
+              votes={room.mafiaVotes || {}}
+              playerId={playerId}
+              players={room.players || {}}
+              onVote={(targetId) => castMafiaVote(roomCode, playerId, targetId)}
+            />
+          )}
+
+          {/* POLICE CHECK */}
+          {phase === 'police_wake' && role === 'police' && (
+            <PoliceCheckPanel
+              alivePlayers={alivePlayers}
+              policeCheck={room.policeCheck}
+              playerId={playerId}
+              onCheck={(suspectId) => policeCheck(roomCode, suspectId)}
+            />
+          )}
+
+          {/* DOCTOR SAVE */}
+          {phase === 'doctor_wake' && role === 'doctor' && (
+            <DoctorSavePanel
+              alivePlayers={players.filter(p => p.isAlive && !p.isGod)}
+              doctorSave={room.doctorSave}
+              onSave={(targetId) => doctorSave(roomCode, targetId)}
+            />
+          )}
+
+          {/* DAY DISCUSSION */}
+          {phase === 'day' && (
+            <DayPanel lastEvent={lastEvent} />
+          )}
+
+          {/* DAY VOTE */}
+          {phase === 'vote' && (
+            <VotePanel
+              alivePlayers={alivePlayers}
+              dayVotes={room.dayVotes || {}}
+              playerId={playerId}
+              players={room.players || {}}
+              onVote={(targetId) => castDayVote(roomCode, playerId, targetId)}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Sub-panels ---
+
+function MafiaVotePanel({
+  alivePlayers, allMafia, votes, playerId, players, onVote
+}: {
+  alivePlayers: Player[];
+  allMafia: Player[];
+  votes: Record<string, string>;
+  playerId: string;
+  players: Record<string, Player>;
+  onVote: (id: string) => void;
+}) {
+  const myVote = votes[playerId];
+
+  return (
+    <div className="space-y-4">
+      {allMafia.length > 0 && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
+          <p className="text-red-300 text-xs uppercase tracking-wider font-semibold mb-2">Your team</p>
+          {allMafia.map(p => (
+            <div key={p.id} className="flex items-center gap-2 text-red-200 text-sm py-1">
+              <span>🔪</span><span>{p.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div>
+        <p className="text-gray-400 text-sm mb-3 text-center">Choose your victim</p>
+        <div className="space-y-2">
+          {alivePlayers.map(p => {
+            const votedFor = Object.entries(votes).filter(([, t]) => t === p.id).length;
+            return (
+              <button
+                key={p.id}
+                onClick={() => onVote(p.id)}
+                className={`w-full flex items-center justify-between rounded-xl px-4 py-3 border transition ${
+                  myVote === p.id
+                    ? 'border-red-500 bg-red-500/20 text-white'
+                    : 'border-white/10 bg-white/5 text-gray-300 hover:border-red-500/50'
+                }`}
+              >
+                <span className="font-medium">{p.name}</span>
+                {votedFor > 0 && (
+                  <span className="text-xs text-red-400">{votedFor} vote{votedFor > 1 ? 's' : ''}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {myVote && (
+        <div className="text-center text-green-400 text-sm">
+          ✓ You voted for {players[myVote]?.name}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PoliceCheckPanel({
+  alivePlayers, policeCheck: check, playerId, onCheck
+}: {
+  alivePlayers: Player[];
+  policeCheck: { suspectId: string; result: string } | null;
+  playerId: string;
+  onCheck: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <p className="text-gray-400 text-sm text-center">Point to who you suspect is Mafia</p>
+
+      {check && check.result !== 'pending' ? (
+        <div className={`rounded-2xl p-5 text-center border ${
+          check.result === 'yes' ? 'border-red-500 bg-red-500/10' : 'border-green-500 bg-green-500/10'
+        }`}>
+          <div className="text-3xl mb-2">{check.result === 'yes' ? '🔴' : '🟢'}</div>
+          <p className="text-white font-bold">
+            {check.result === 'yes' ? 'Yes — They are Mafia!' : 'No — They are not Mafia.'}
+          </p>
+        </div>
+      ) : check && check.result === 'pending' ? (
+        <div className="rounded-2xl p-5 text-center border border-blue-500 bg-blue-500/10 animate-pulse">
+          <p className="text-blue-300">Waiting for God&apos;s answer...</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {alivePlayers.map(p => (
+            <button
+              key={p.id}
+              onClick={() => onCheck(p.id)}
+              className="w-full flex items-center gap-3 rounded-xl px-4 py-3 border border-white/10 bg-white/5 text-gray-300 hover:border-blue-500/50 transition"
+            >
+              <span className="font-medium">{p.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DoctorSavePanel({
+  alivePlayers, doctorSave: saved, onSave
+}: {
+  alivePlayers: Player[];
+  doctorSave: string | null;
+  onSave: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <p className="text-gray-400 text-sm text-center">Choose one player to protect tonight</p>
+
+      {saved ? (
+        <div className="rounded-2xl p-5 text-center border border-green-500 bg-green-500/10">
+          <div className="text-3xl mb-2">🛡️</div>
+          <p className="text-green-300 font-bold">Player protected!</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {alivePlayers.map(p => (
+            <button
+              key={p.id}
+              onClick={() => onSave(p.id)}
+              className="w-full flex items-center gap-3 rounded-xl px-4 py-3 border border-white/10 bg-white/5 text-gray-300 hover:border-green-500/50 transition"
+            >
+              <span className="font-medium">{p.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DayPanel({ lastEvent }: { lastEvent?: { message: string; type: string } }) {
+  return (
+    <div className="space-y-4">
+      {lastEvent && (
+        <div className={`rounded-2xl p-5 text-center border ${
+          lastEvent.type === 'killed' ? 'border-red-500/40 bg-red-500/10' :
+          lastEvent.type === 'saved' ? 'border-green-500/40 bg-green-500/10' :
+          'border-white/20 bg-white/5'
+        }`}>
+          <p className="text-white text-base font-medium">{lastEvent.message}</p>
+        </div>
+      )}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+        <p className="text-yellow-300 font-semibold mb-1">Discussion Time</p>
+        <p className="text-gray-400 text-sm">Talk with other players. Share your suspicions. Waiting for God to start the vote...</p>
+      </div>
+    </div>
+  );
+}
+
+function VotePanel({
+  alivePlayers, dayVotes, playerId, players, onVote
+}: {
+  alivePlayers: Player[];
+  dayVotes: Record<string, string>;
+  playerId: string;
+  players: Record<string, Player>;
+  onVote: (id: string) => void;
+}) {
+  const myVote = dayVotes[playerId];
+
+  return (
+    <div className="space-y-4">
+      <p className="text-gray-400 text-sm text-center">Vote to eliminate a suspect</p>
+      <div className="space-y-2">
+        {alivePlayers.map(p => {
+          const votedFor = Object.entries(dayVotes).filter(([, t]) => t === p.id).length;
+          return (
+            <button
+              key={p.id}
+              onClick={() => !myVote && onVote(p.id)}
+              disabled={!!myVote}
+              className={`w-full flex items-center justify-between rounded-xl px-4 py-3 border transition ${
+                myVote === p.id
+                  ? 'border-orange-500 bg-orange-500/20 text-white'
+                  : myVote
+                  ? 'border-white/5 bg-white/3 text-gray-500 cursor-not-allowed opacity-60'
+                  : 'border-white/10 bg-white/5 text-gray-300 hover:border-orange-500/50'
+              }`}
+            >
+              <span className="font-medium">{p.name}</span>
+              {votedFor > 0 && (
+                <span className="text-xs text-orange-400">{votedFor} vote{votedFor > 1 ? 's' : ''}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {myVote && (
+        <div className="text-center text-green-400 text-sm">
+          ✓ Voted for {players[myVote]?.name}. Waiting for others...
+        </div>
+      )}
+    </div>
+  );
+}
