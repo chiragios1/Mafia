@@ -42,7 +42,7 @@ export default function GodPanel({ room, playerId, roomCode }: Props) {
 
   const mafiaVoteCount = Object.keys(room.mafiaVotes || {}).length;
   const totalMafia = aliveMafia.length;
-  const policeCheck = room.policeCheck;
+  const policeChecks = room.policeChecks || {};
 
   async function advance(next: Phase) {
     await setPhase(roomCode, next);
@@ -105,17 +105,23 @@ export default function GodPanel({ room, playerId, roomCode }: Props) {
           <div className="space-y-3">
             <p className="text-gray-400 text-sm">Say: <span className="text-white italic">"Police, open your eyes. Point to who you suspect."</span></p>
 
-            {policeCheck ? (
-              <div className={`rounded-xl p-4 border ${policeCheck.result === 'yes' ? 'bg-red-500/10 border-red-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
-                <p className="text-gray-400 text-xs uppercase tracking-wider mb-1 text-center">Police identified</p>
-                <p className="text-white font-bold text-center text-lg">{room.players?.[policeCheck.suspectId]?.name}</p>
-                <p className={`text-center text-sm font-bold mt-1 ${policeCheck.result === 'yes' ? 'text-red-400' : 'text-green-400'}`}>
-                  {policeCheck.result === 'yes' ? '🔴 Is Mafia' : '🟢 Is not Mafia'}
-                </p>
+            {Object.keys(policeChecks).length > 0 ? (
+              <div className="space-y-2">
+                {Object.entries(policeChecks).map(([policeId, check]) => (
+                  <div key={policeId} className={`rounded-xl p-3 border ${check.result === 'yes' ? 'bg-red-500/10 border-red-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
+                    <p className="text-gray-500 text-xs mb-1">{room.players?.[policeId]?.name} checked:</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-white font-bold">{room.players?.[check.suspectId]?.name}</p>
+                      <p className={`text-sm font-bold ${check.result === 'yes' ? 'text-red-400' : 'text-green-400'}`}>
+                        {check.result === 'yes' ? '🔴 Mafia' : '🟢 Town'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-center">
-                <p className="text-blue-300 text-sm animate-pulse">Waiting for police to identify a suspect...</p>
+                <p className="text-blue-300 text-sm animate-pulse">Waiting for police to identify suspects...</p>
               </div>
             )}
 

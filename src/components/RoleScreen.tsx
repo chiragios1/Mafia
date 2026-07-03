@@ -170,9 +170,8 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
           {phase === 'police_wake' && role === 'police' && (
             <PoliceCheckPanel
               alivePlayers={alivePlayers}
-              policeCheck={room.policeCheck}
-              playerId={playerId}
-              onCheck={(suspectId) => policeCheck(roomCode, suspectId)}
+              myCheck={room.policeChecks?.[playerId] ?? null}
+              onCheck={(suspectId) => policeCheck(roomCode, playerId, suspectId)}
             />
           )}
 
@@ -284,11 +283,10 @@ function MafiaVotePanel({
 }
 
 function PoliceCheckPanel({
-  alivePlayers, policeCheck: check, playerId, onCheck
+  alivePlayers, myCheck: check, onCheck
 }: {
   alivePlayers: Player[];
-  policeCheck: { suspectId: string; result: string } | null;
-  playerId: string;
+  myCheck: { suspectId: string; result: string } | null;
   onCheck: (id: string) => void;
 }) {
   return (

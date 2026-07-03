@@ -70,7 +70,7 @@ export async function createRoom(hostName: string): Promise<{ roomCode: string; 
     mafiaVotes: {},
     dayVotes: {},
     doctorSave: null,
-    policeCheck: null,
+    policeChecks: null,
     nightKillTarget: null,
     events: [],
     winner: null,
@@ -145,11 +145,11 @@ export async function doctorSave(roomCode: string, targetId: string): Promise<vo
 }
 
 // Police checks a suspect — system auto-resolves from actual role
-export async function policeCheck(roomCode: string, suspectId: string): Promise<void> {
+export async function policeCheck(roomCode: string, policePlayerId: string, suspectId: string): Promise<void> {
   const snapshot = await get(ref(db, `rooms/${roomCode}/players/${suspectId}`));
   const suspect: Player = snapshot.val();
   const result = suspect.role === 'mafia' ? 'yes' : 'no';
-  await update(ref(db, `rooms/${roomCode}/policeCheck`), { suspectId, result });
+  await update(ref(db, `rooms/${roomCode}/policeChecks/${policePlayerId}`), { suspectId, result });
 }
 
 // Resolve night — apply kills/saves, move to day
@@ -203,7 +203,7 @@ export async function resolveNight(roomCode: string): Promise<void> {
   updates[`rooms/${roomCode}/phase`] = 'day';
   updates[`rooms/${roomCode}/mafiaVotes`] = {};
   updates[`rooms/${roomCode}/doctorSave`] = null;
-  updates[`rooms/${roomCode}/policeCheck`] = null;
+  updates[`rooms/${roomCode}/policeChecks`] = null;
   updates[`rooms/${roomCode}/nightKillTarget`] = killTarget;
 
   await update(ref(db), updates);
@@ -330,7 +330,7 @@ export async function restartGame(roomCode: string): Promise<void> {
   updates[`rooms/${roomCode}/mafiaVotes`] = {};
   updates[`rooms/${roomCode}/dayVotes`] = {};
   updates[`rooms/${roomCode}/doctorSave`] = null;
-  updates[`rooms/${roomCode}/policeCheck`] = null;
+  updates[`rooms/${roomCode}/policeChecks`] = null;
   updates[`rooms/${roomCode}/nightKillTarget`] = null;
   updates[`rooms/${roomCode}/tiedPlayers`] = null;
   updates[`rooms/${roomCode}/round`] = 1;
