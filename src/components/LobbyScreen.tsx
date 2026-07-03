@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Room } from '@/types/game';
 import { RoleConfig } from '@/lib/game';
 
@@ -17,6 +17,23 @@ export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLea
   const [error, setError] = useState('');
   const [roleConfig, setRoleConfig] = useState<RoleConfig>({ mafiaCount: 1, policeCount: 1, doctorCount: 1 });
   const [copied, setCopied] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio('/sounds/lobby.mp3');
+    audio.loop = true;
+    audio.volume = 0.35;
+    audioRef.current = audio;
+    audio.play().catch(() => {/* autoplay blocked — user interaction needed */});
+    return () => { audio.pause(); audio.src = ''; };
+  }, []);
+
+  function toggleMute() {
+    if (!audioRef.current) return;
+    audioRef.current.muted = !audioRef.current.muted;
+    setMuted(m => !m);
+  }
 
   function copyInviteLink() {
     const link = `${window.location.origin}/join/${roomCode}`;
@@ -56,7 +73,16 @@ export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLea
     <main className="min-h-dvh phase-night p-4 flex flex-col items-center">
       {/* Header */}
       <div className="text-center mt-8 mb-6">
-        <h2 className="text-2xl font-black text-red-500 tracking-widest">MAFIA</h2>
+        <div className="flex items-center justify-center gap-3">
+          <h2 className="text-2xl font-black text-red-500 tracking-widest">MAFIA</h2>
+          <button
+            onClick={toggleMute}
+            title={muted ? 'Unmute music' : 'Mute music'}
+            className="text-gray-500 hover:text-white transition text-lg"
+          >
+            {muted ? '🔇' : '🔊'}
+          </button>
+        </div>
         <p className="text-gray-400 text-sm mt-1">Waiting for players...</p>
         <div className="mt-3 flex items-center justify-center gap-2">
           <span className="text-gray-500 text-xs uppercase tracking-wider">Room Code</span>
