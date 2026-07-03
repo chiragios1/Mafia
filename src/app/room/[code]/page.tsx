@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useRoom } from '@/hooks/useRoom';
-import { startGame, removePlayer } from '@/lib/game';
+import { startGame, removePlayer, cancelRoom } from '@/lib/game';
 import GameScreen from '@/components/GameScreen';
 import LobbyScreen from '@/components/LobbyScreen';
 
@@ -29,11 +29,8 @@ export default function RoomPage() {
   }
 
   if (!room) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center phase-night">
-        <p className="text-red-400">Room not found.</p>
-      </div>
-    );
+    router.replace('/');
+    return null;
   }
 
   const player = room.players?.[playerId];
@@ -57,6 +54,10 @@ export default function RoomPage() {
         }}
         onLeave={async () => {
           await removePlayer(code, playerId);
+          router.replace('/');
+        }}
+        onCancel={async () => {
+          await cancelRoom(code);
           router.replace('/');
         }}
       />

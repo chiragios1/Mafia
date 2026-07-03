@@ -310,6 +310,36 @@ export async function removePlayer(roomCode: string, playerId: string): Promise<
   await remove(ref(db, `rooms/${roomCode}/players/${playerId}`));
 }
 
+// Cancel and delete the entire room
+export async function cancelRoom(roomCode: string): Promise<void> {
+  await remove(ref(db, `rooms/${roomCode}`));
+}
+
+// Restart game — reset all players to alive, clear game state, return to lobby
+export async function restartGame(roomCode: string): Promise<void> {
+  const snapshot = await get(ref(db, `rooms/${roomCode}`));
+  const room: Room = snapshot.val();
+
+  const updates: Record<string, unknown> = {};
+  Object.keys(room.players).forEach(id => {
+    updates[`rooms/${roomCode}/players/${id}/isAlive`] = true;
+    updates[`rooms/${roomCode}/players/${id}/role`] = 'civilian';
+    updates[`rooms/${roomCode}/players/${id}/isGod`] = false;
+  });
+  updates[`rooms/${roomCode}/phase`] = 'lobby';
+  updates[`rooms/${roomCode}/winner`] = null;
+  updates[`rooms/${roomCode}/events`] = [];
+  updates[`rooms/${roomCode}/mafiaVotes`] = {};
+  updates[`rooms/${roomCode}/dayVotes`] = {};
+  updates[`rooms/${roomCode}/doctorSave`] = null;
+  updates[`rooms/${roomCode}/policeCheck`] = null;
+  updates[`rooms/${roomCode}/nightKillTarget`] = null;
+  updates[`rooms/${roomCode}/tiedPlayers`] = null;
+  updates[`rooms/${roomCode}/round`] = 1;
+
+  await update(ref(db), updates);
+}
+
 // Subscribe to room changes
 export function subscribeToRoom(roomCode: string, callback: (room: Room) => void) {
   const roomRef = ref(db, `rooms/${roomCode}`);

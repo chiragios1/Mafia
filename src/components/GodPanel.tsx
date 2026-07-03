@@ -1,6 +1,6 @@
 'use client';
 import { Room, Phase } from '@/types/game';
-import { setPhase, resolveNight, resolveDay, answerPoliceCheck } from '@/lib/game';
+import { setPhase, resolveNight, resolveDay, answerPoliceCheck, cancelRoom, restartGame } from '@/lib/game';
 
 interface Props {
   room: Room;
@@ -221,14 +221,32 @@ export default function GodPanel({ room, playerId, roomCode }: Props) {
 
         {/* GAME OVER */}
         {phase === 'game_over' && (
-          <div className="text-center py-4">
-            <div className="text-4xl mb-3">{room.winner === 'mafia' ? '🔪' : '🏛️'}</div>
-            <h2 className="text-2xl font-black text-white mb-2">
-              {room.winner === 'mafia' ? 'Mafia Wins!' : 'Town Wins!'}
-            </h2>
-            <p className="text-gray-400 text-sm">The game is over.</p>
+          <div className="text-center py-4 space-y-4">
+            <div>
+              <div className="text-4xl mb-3">{room.winner === 'mafia' ? '🔪' : '🏛️'}</div>
+              <h2 className="text-2xl font-black text-white mb-1">
+                {room.winner === 'mafia' ? 'Mafia Wins!' : 'Town Wins!'}
+              </h2>
+              <p className="text-gray-400 text-sm">The game is over.</p>
+            </div>
+            <button
+              onClick={async () => { await restartGame(roomCode); }}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition"
+            >
+              🔄 Restart Game
+            </button>
           </div>
         )}
+      </div>
+
+      {/* Danger zone — always visible to god */}
+      <div className="mt-4 text-center">
+        <button
+          onClick={async () => { await cancelRoom(roomCode); }}
+          className="text-gray-600 hover:text-red-400 text-sm transition"
+        >
+          Cancel &amp; Delete Room
+        </button>
       </div>
 
       {/* All Players Overview */}

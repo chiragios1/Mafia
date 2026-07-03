@@ -9,9 +9,10 @@ interface Props {
   onStartGame: (godId: string, config: RoleConfig) => Promise<void>;
   onKick: (targetId: string) => Promise<void>;
   onLeave: () => Promise<void>;
+  onCancel: () => Promise<void>;
 }
 
-export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLeave }: Props) {
+export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLeave, onCancel }: Props) {
   const [selectedGod, setSelectedGod] = useState(playerId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -226,6 +227,13 @@ export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLea
             className="w-full mt-4 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white font-bold py-3.5 rounded-xl glow-red transition"
           >
             {loading ? 'Starting...' : players.length < 4 ? `Need ${4 - players.length} more player(s)` : 'Start Game'}
+          </button>
+
+          <button
+            onClick={onCancel}
+            className="w-full mt-2 text-gray-500 hover:text-red-400 text-sm py-2 transition"
+          >
+            Cancel &amp; Delete Room
           </button>
         </div>
       )}
