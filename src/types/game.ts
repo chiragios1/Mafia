@@ -52,7 +52,7 @@ export interface Room {
   doctorSave: string | null;          // playerId being saved
   policeCheck: PoliceCheck | null;
   nightKillTarget: string | null;
-  tiedPlayers: string[] | null;
+  tiedPlayers?: string[] | null;
   events: GameEvent[];
   winner: 'mafia' | 'town' | null;
   round: number;
