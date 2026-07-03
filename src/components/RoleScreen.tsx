@@ -20,7 +20,7 @@ function shouldBeActive(playerRole: string, phase: Phase): boolean {
 
 const ROLE_CONFIG = {
   mafia:    { color: 'text-red-400',    cardBg: 'bg-red-950',   cardBorder: 'border-red-500',   bg: 'phase-mafia',   icon: '🔪', label: 'MAFIA',      desc: 'Eliminate the town — one by one.' },
-  police:   { color: 'text-blue-400',   cardBg: 'bg-blue-950',  cardBorder: 'border-blue-500',  bg: 'phase-police',  icon: '🔍', label: 'DETECTIVE',   desc: 'Find the Mafia before it\'s too late.' },
+  police:   { color: 'text-blue-400',   cardBg: 'bg-blue-950',  cardBorder: 'border-blue-500',  bg: 'phase-police',  icon: '🔍', label: 'POLICE',   desc: 'Find the Mafia before it\'s too late.' },
   doctor:   { color: 'text-green-400',  cardBg: 'bg-green-950', cardBorder: 'border-green-500', bg: 'phase-doctor',  icon: '💊', label: 'DOCTOR',      desc: 'Save one life each night.' },
   civilian: { color: 'text-gray-200',   cardBg: 'bg-gray-800',  cardBorder: 'border-gray-500',  bg: 'phase-night',   icon: '👤', label: 'CIVILIAN',    desc: 'Find the Mafia and vote them out.' },
   god:      { color: 'text-yellow-300', cardBg: 'bg-yellow-950',cardBorder: 'border-yellow-500',bg: 'phase-night',   icon: '👑', label: 'GOD',         desc: 'You are the narrator. Guide the game.' },

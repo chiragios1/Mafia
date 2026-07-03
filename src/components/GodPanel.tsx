@@ -101,7 +101,7 @@ export default function GodPanel({ room, playerId, roomCode }: Props) {
         {/* POLICE WAKE */}
         {phase === 'police_wake' && (
           <div className="space-y-3">
-            <p className="text-gray-400 text-sm">Say: <span className="text-white italic">"Detective, open your eyes. Point to who you suspect."</span></p>
+            <p className="text-gray-400 text-sm">Say: <span className="text-white italic">"Police, open your eyes. Point to who you suspect."</span></p>
 
             {policeCheck && policeCheck.result === 'pending' && (
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
