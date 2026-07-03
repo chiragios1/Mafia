@@ -16,6 +16,15 @@ export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLea
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [roleConfig, setRoleConfig] = useState<RoleConfig>({ mafiaCount: 1, policeCount: 1, doctorCount: 1 });
+  const [copied, setCopied] = useState(false);
+
+  function copyInviteLink() {
+    const link = `${window.location.origin}/join/${roomCode}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   function adjust(role: keyof RoleConfig, delta: number) {
     setRoleConfig(prev => ({ ...prev, [role]: Math.max(0, prev[role] + delta) }));
@@ -55,6 +64,12 @@ export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLea
             {roomCode}
           </span>
         </div>
+        <button
+          onClick={copyInviteLink}
+          className="mt-3 text-xs text-gray-400 hover:text-white border border-white/10 hover:border-white/30 rounded-lg px-4 py-1.5 transition"
+        >
+          {copied ? '✓ Link Copied!' : '🔗 Copy Invite Link'}
+        </button>
       </div>
 
       {/* Player List */}
