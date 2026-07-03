@@ -51,10 +51,10 @@ export default function GodPanel({ room, playerId, roomCode }: Props) {
   return (
     <main className="min-h-dvh bg-[#0d0d1a] p-4 pb-8">
       {/* Header */}
-      <div className="text-center pt-6 pb-4">
-        <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">God Panel</div>
-        <div className={`text-xl font-bold ${PHASE_COLORS[phase]}`}>{PHASE_LABELS[phase]}</div>
-        <div className="text-gray-500 text-sm mt-1">Round {room.round}</div>
+      <div className="text-center pt-6 pb-4 animate-fade-in-down">
+        <div className="text-xs text-gray-600 uppercase tracking-[0.3em] mb-1">God Panel</div>
+        <div className={`font-display text-4xl ${PHASE_COLORS[phase]}`}>{PHASE_LABELS[phase]}</div>
+        <div className="text-gray-600 text-xs uppercase tracking-widest mt-1">Round {room.round}</div>
       </div>
 
       {/* Stats */}

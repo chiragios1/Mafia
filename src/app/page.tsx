@@ -57,11 +57,11 @@ export default function HomePage() {
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center p-6 phase-night">
       {/* Title */}
-      <div className="text-center mb-10">
-        <h1 className="text-6xl font-black tracking-widest text-red-500 drop-shadow-[0_0_30px_rgba(220,38,38,0.8)]">
+      <div className="text-center mb-10 animate-fade-in-down">
+        <h1 className="font-display text-8xl text-red-500 animate-flicker">
           MAFIA
         </h1>
-        <p className="text-gray-400 mt-2 text-sm tracking-widest uppercase">The Social Deduction Game</p>
+        <p className="text-gray-500 mt-1 text-xs tracking-[0.3em] uppercase">The Social Deduction Game</p>
       </div>
 
       {/* Card */}

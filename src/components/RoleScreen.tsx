@@ -76,18 +76,18 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
 
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center phase-night p-6 text-center gap-8">
-        <div>
-          <div className="text-5xl mb-3 animate-pulse">😴</div>
-          <h2 className="text-xl font-bold text-indigo-300">City is Sleeping</h2>
-          <p className="text-gray-500 text-sm mt-1">Keep your eyes closed...</p>
+        <div className="animate-fade-in-down">
+          <div className="text-5xl mb-3 animate-breathe">😴</div>
+          <h2 className="font-display text-3xl text-indigo-300">City is Sleeping</h2>
+          <p className="text-gray-500 text-sm mt-1 tracking-widest uppercase">Keep your eyes closed...</p>
         </div>
 
         {showCard ? (
           /* Role card — full reveal */
           <div className="w-full max-w-xs flex flex-col items-center gap-4">
-            <div className={`w-full rounded-3xl border-2 ${config.cardBorder} ${config.cardBg} p-8 flex flex-col items-center gap-3`}>
-              <div className="text-7xl">{config.icon}</div>
-              <div className={`text-4xl font-black uppercase tracking-widest ${config.color}`}>{config.label}</div>
+            <div className={`w-full rounded-3xl border-2 ${config.cardBorder} ${config.cardBg} p-8 flex flex-col items-center gap-3 animate-pop-in`}>
+              <div className="text-7xl animate-heartbeat">{config.icon}</div>
+              <div className={`font-display text-6xl ${config.color}`}>{config.label}</div>
               <div className="text-gray-400 text-sm">{config.desc}</div>
             </div>
             {!roleHidden && (
@@ -139,10 +139,10 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
   return (
     <div className={`min-h-dvh flex flex-col p-4 pb-8 ${active ? config.bg : 'phase-night'}`}>
       {/* Role Header */}
-      <div className={`rounded-2xl border ${config.cardBorder} ${config.cardBg} px-5 py-4 mt-4 mb-5 flex items-center gap-4`}>
+      <div className={`rounded-2xl border ${config.cardBorder} ${config.cardBg} px-5 py-4 mt-4 mb-5 flex items-center gap-4 animate-fade-in-down`}>
         <div className="text-5xl">{config.icon}</div>
         <div>
-          <div className={`text-2xl font-black uppercase tracking-widest leading-none ${config.color}`}>{config.label}</div>
+          <div className={`font-display text-4xl leading-none ${config.color}`}>{config.label}</div>
           <div className="text-gray-400 text-xs mt-1">{config.desc}</div>
         </div>
         <div className="ml-auto text-right">

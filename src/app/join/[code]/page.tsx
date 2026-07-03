@@ -29,11 +29,9 @@ export default function JoinPage() {
 
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center p-6 phase-night">
-      <div className="text-center mb-8">
-        <h1 className="text-5xl font-black tracking-widest text-red-500 drop-shadow-[0_0_30px_rgba(220,38,38,0.8)]">
-          MAFIA
-        </h1>
-        <p className="text-gray-400 mt-2 text-sm">You&apos;ve been invited to join a room</p>
+      <div className="text-center mb-8 animate-fade-in-down">
+        <h1 className="font-display text-7xl text-red-500 animate-flicker">MAFIA</h1>
+        <p className="text-gray-500 mt-1 text-xs tracking-[0.25em] uppercase">You&apos;ve been invited to join a room</p>
       </div>
 
       <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur">

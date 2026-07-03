@@ -75,7 +75,7 @@ export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLea
       {/* Header */}
       <div className="text-center mt-8 mb-6">
         <div className="flex items-center justify-center gap-3">
-          <h2 className="text-2xl font-black text-red-500 tracking-widest">MAFIA</h2>
+          <h2 className="font-display text-5xl text-red-500 animate-flicker">MAFIA</h2>
           <button
             onClick={toggleMute}
             title={muted ? 'Unmute music' : 'Mute music'}
@@ -84,7 +84,7 @@ export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLea
             {muted ? '🔇' : '🔊'}
           </button>
         </div>
-        <p className="text-gray-400 text-sm mt-1">Waiting for players...</p>
+        <p className="text-gray-500 text-xs tracking-[0.25em] uppercase mt-1">Waiting for players...</p>
         <div className="mt-3 flex items-center justify-center gap-2">
           <span className="text-gray-500 text-xs uppercase tracking-wider">Room Code</span>
           <span className="bg-white/10 border border-white/20 rounded-lg px-4 py-1.5 text-white font-mono font-bold tracking-[0.3em] text-lg">
