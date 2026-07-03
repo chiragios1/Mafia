@@ -217,7 +217,7 @@ export async function castDayVote(roomCode: string, voterId: string, targetId: s
   await update(ref(db, `rooms/${roomCode}/dayVotes`), { [voterId]: targetId });
 }
 
-// Resolve day vote — eliminate most voted
+// Resolve day vote — eliminate most voted, or trigger re-vote on tie
 export async function resolveDay(roomCode: string): Promise<void> {
   const snapshot = await get(ref(db, `rooms/${roomCode}`));
   const room: Room = snapshot.val();
@@ -234,10 +234,42 @@ export async function resolveDay(roomCode: string): Promise<void> {
     if (count > maxVotes) { maxVotes = count; eliminateTarget = id; }
   });
 
+  // Check for tie — multiple players share the max vote count
+  const tied = Object.entries(voteCounts)
+    .filter(([, count]) => count === maxVotes)
+    .map(([id]) => id);
+
+  const isTie = tied.length > 1;
+  const isRevote = room.phase === 'revote';
+
   const updates: Record<string, unknown> = {};
   const events: GameEvent[] = [...(room.events || [])];
 
-  if (eliminateTarget) {
+  if (isTie && !isRevote) {
+    // First tie — move to re-vote with only tied players
+    const tiedNames = tied.map(id => room.players[id]?.name).join(' & ');
+    events.push({
+      type: 'tie',
+      message: `Vote tied between ${tiedNames}! Discuss again and re-vote.`,
+      timestamp: Date.now(),
+    });
+    updates[`rooms/${roomCode}/events`] = events;
+    updates[`rooms/${roomCode}/phase`] = 'revote';
+    updates[`rooms/${roomCode}/tiedPlayers`] = tied;
+    updates[`rooms/${roomCode}/dayVotes`] = {};
+  } else if (isTie && isRevote) {
+    // Second tie — no elimination, move to next night
+    events.push({
+      type: 'no_kill',
+      message: 'Vote tied again — no one was eliminated. Night falls...',
+      timestamp: Date.now(),
+    });
+    updates[`rooms/${roomCode}/events`] = events;
+    updates[`rooms/${roomCode}/phase`] = 'night';
+    updates[`rooms/${roomCode}/tiedPlayers`] = null;
+    updates[`rooms/${roomCode}/dayVotes`] = {};
+    updates[`rooms/${roomCode}/round`] = (room.round || 1) + 1;
+  } else if (eliminateTarget) {
     updates[`rooms/${roomCode}/players/${eliminateTarget}/isAlive`] = false;
     events.push({
       type: 'eliminated',
@@ -246,12 +278,12 @@ export async function resolveDay(roomCode: string): Promise<void> {
       message: `${room.players[eliminateTarget]?.name} was eliminated by town vote.`,
       timestamp: Date.now(),
     });
+    updates[`rooms/${roomCode}/events`] = events;
+    updates[`rooms/${roomCode}/phase`] = 'night';
+    updates[`rooms/${roomCode}/tiedPlayers`] = null;
+    updates[`rooms/${roomCode}/dayVotes`] = {};
+    updates[`rooms/${roomCode}/round`] = (room.round || 1) + 1;
   }
-
-  updates[`rooms/${roomCode}/events`] = events;
-  updates[`rooms/${roomCode}/phase`] = 'night';
-  updates[`rooms/${roomCode}/dayVotes`] = {};
-  updates[`rooms/${roomCode}/round`] = (room.round || 1) + 1;
 
   await update(ref(db), updates);
   await checkWinCondition(roomCode);

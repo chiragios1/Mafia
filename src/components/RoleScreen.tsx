@@ -14,7 +14,7 @@ function shouldBeActive(playerRole: string, phase: Phase): boolean {
   if (phase === 'mafia_wake') return playerRole === 'mafia';
   if (phase === 'police_wake') return playerRole === 'police';
   if (phase === 'doctor_wake') return playerRole === 'doctor';
-  if (phase === 'day' || phase === 'vote') return true;
+  if (phase === 'day' || phase === 'vote' || phase === 'revote') return true;
   return false;
 }
 
@@ -153,6 +153,22 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
               players={room.players || {}}
               onVote={(targetId) => castDayVote(roomCode, playerId, targetId)}
             />
+          )}
+
+          {/* RE-VOTE */}
+          {phase === 'revote' && (
+            <div className="space-y-3">
+              <div className="bg-pink-500/10 border border-pink-500/20 rounded-2xl p-3 text-center">
+                <p className="text-pink-300 text-sm font-semibold">Tie! Vote again — only tied players</p>
+              </div>
+              <VotePanel
+                alivePlayers={alivePlayers.filter(p => (room.tiedPlayers || []).includes(p.id))}
+                dayVotes={room.dayVotes || {}}
+                playerId={playerId}
+                players={room.players || {}}
+                onVote={(targetId) => castDayVote(roomCode, playerId, targetId)}
+              />
+            </div>
           )}
         </div>
       )}

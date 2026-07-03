@@ -16,6 +16,7 @@ const PHASE_LABELS: Record<Phase, string> = {
   doctor_wake: 'Doctor is Awake',
   day: 'Day — Discussion',
   vote: 'Day Vote',
+  revote: 'Re-vote — Tie Breaker',
   game_over: 'Game Over',
 };
 
@@ -27,6 +28,7 @@ const PHASE_COLORS: Record<Phase, string> = {
   doctor_wake: 'text-green-400',
   day: 'text-yellow-400',
   vote: 'text-orange-400',
+  revote: 'text-pink-400',
   game_over: 'text-purple-400',
 };
 
@@ -187,6 +189,32 @@ export default function GodPanel({ room, playerId, roomCode }: Props) {
               className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition glow-red"
             >
               ⚖️ Resolve Vote & Start New Night
+            </button>
+          </div>
+        )}
+
+        {/* REVOTE */}
+        {phase === 'revote' && (
+          <div className="space-y-3">
+            <div className="bg-pink-500/10 border border-pink-500/20 rounded-xl p-3">
+              <p className="text-pink-300 text-sm font-semibold mb-1 text-center">Tie — Re-vote</p>
+              <p className="text-gray-400 text-xs text-center mb-2">Only these players can be voted on:</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {(room.tiedPlayers || []).map(id => (
+                  <span key={id} className="bg-pink-500/20 text-pink-300 text-xs font-bold px-3 py-1 rounded-full">
+                    {room.players?.[id]?.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <p className="text-gray-400 text-sm text-center">
+              {Object.keys(room.dayVotes || {}).length}/{alivePlayers.length} voted
+            </p>
+            <button
+              onClick={async () => { await resolveDay(roomCode); }}
+              className="w-full bg-pink-700 hover:bg-pink-600 text-white font-bold py-3 rounded-xl transition"
+            >
+              ⚖️ Resolve Re-vote
             </button>
           </div>
         )}

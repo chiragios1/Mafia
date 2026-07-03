@@ -8,6 +8,7 @@ export type Phase =
   | 'doctor_wake'
   | 'day'
   | 'vote'
+  | 'revote'
   | 'game_over';
 
 export interface Player {
@@ -29,7 +30,7 @@ export interface DayVote {
 }
 
 export interface GameEvent {
-  type: 'killed' | 'saved' | 'eliminated' | 'no_kill';
+  type: 'killed' | 'saved' | 'eliminated' | 'no_kill' | 'tie';
   playerId?: string;
   playerName?: string;
   message: string;
@@ -51,6 +52,7 @@ export interface Room {
   doctorSave: string | null;          // playerId being saved
   policeCheck: PoliceCheck | null;
   nightKillTarget: string | null;
+  tiedPlayers: string[] | null;
   events: GameEvent[];
   winner: 'mafia' | 'town' | null;
   round: number;
