@@ -66,7 +66,7 @@ export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLea
           <span className="text-gray-500 text-xs">Share the code above</span>
         </div>
 
-        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+        <div className="space-y-2 pr-1">
           {players.map(p => (
             <div
               key={p.id}
@@ -111,7 +111,7 @@ export default function LobbyScreen({ room, playerId, onStartGame, onKick, onLea
           <h3 className="text-gray-300 text-sm uppercase tracking-wider font-semibold mb-3">
             Select God (Narrator)
           </h3>
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <div className="space-y-2 pr-1">
             {players.map(p => (
               <button
                 key={p.id}
