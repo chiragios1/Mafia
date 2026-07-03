@@ -19,11 +19,11 @@ function shouldBeActive(playerRole: string, phase: Phase): boolean {
 }
 
 const ROLE_CONFIG = {
-  mafia: { color: 'text-red-400', bg: 'phase-mafia', glow: 'glow-red', icon: '🔪', label: 'MAFIA' },
-  police: { color: 'text-blue-400', bg: 'phase-police', glow: 'glow-blue', icon: '🔍', label: 'DETECTIVE' },
-  doctor: { color: 'text-green-400', bg: 'phase-doctor', glow: 'glow-green', icon: '💊', label: 'DOCTOR' },
-  civilian: { color: 'text-gray-300', bg: 'phase-night', glow: '', icon: '👤', label: 'CIVILIAN' },
-  god: { color: 'text-yellow-400', bg: 'phase-night', glow: 'glow-yellow', icon: '👑', label: 'GOD' },
+  mafia:    { color: 'text-red-400',    cardBg: 'bg-red-950',   cardBorder: 'border-red-500',   bg: 'phase-mafia',   icon: '🔪', label: 'MAFIA',      desc: 'Eliminate the town — one by one.' },
+  police:   { color: 'text-blue-400',   cardBg: 'bg-blue-950',  cardBorder: 'border-blue-500',  bg: 'phase-police',  icon: '🔍', label: 'DETECTIVE',   desc: 'Find the Mafia before it\'s too late.' },
+  doctor:   { color: 'text-green-400',  cardBg: 'bg-green-950', cardBorder: 'border-green-500', bg: 'phase-doctor',  icon: '💊', label: 'DOCTOR',      desc: 'Save one life each night.' },
+  civilian: { color: 'text-gray-200',   cardBg: 'bg-gray-800',  cardBorder: 'border-gray-500',  bg: 'phase-night',   icon: '👤', label: 'CIVILIAN',    desc: 'Find the Mafia and vote them out.' },
+  god:      { color: 'text-yellow-300', cardBg: 'bg-yellow-950',cardBorder: 'border-yellow-500',bg: 'phase-night',   icon: '👑', label: 'GOD',         desc: 'You are the narrator. Guide the game.' },
 };
 
 export default function RoleScreen({ room, playerId, roomCode }: Props) {
@@ -53,14 +53,18 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
   // SLEEP SCREEN — shown to all non-active roles during night phases
   if (['night', 'mafia_wake', 'police_wake', 'doctor_wake'].includes(phase) && !active) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center phase-night p-6 text-center">
-        <div className="text-6xl mb-4 animate-pulse">😴</div>
-        <h2 className="text-xl font-bold text-indigo-300 mb-2">City is Sleeping</h2>
-        <p className="text-gray-500 text-sm">Keep your eyes closed...</p>
-        <div className="mt-6 bg-white/5 border border-white/10 rounded-2xl px-6 py-3">
-          <span className={`text-sm font-bold uppercase tracking-wider ${config.color}`}>
-            {config.icon} {config.label}
-          </span>
+      <div className="min-h-dvh flex flex-col items-center justify-center phase-night p-6 text-center gap-8">
+        <div>
+          <div className="text-5xl mb-3 animate-pulse">😴</div>
+          <h2 className="text-xl font-bold text-indigo-300">City is Sleeping</h2>
+          <p className="text-gray-500 text-sm mt-1">Keep your eyes closed...</p>
+        </div>
+
+        {/* Role card — large and clear */}
+        <div className={`w-full max-w-xs rounded-3xl border-2 ${config.cardBorder} ${config.cardBg} p-8 flex flex-col items-center gap-3`}>
+          <div className="text-7xl">{config.icon}</div>
+          <div className={`text-4xl font-black uppercase tracking-widest ${config.color}`}>{config.label}</div>
+          <div className="text-gray-400 text-sm">{config.desc}</div>
         </div>
       </div>
     );
@@ -74,8 +78,11 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
     return (
       <div className={`min-h-dvh flex flex-col items-center justify-center p-6 text-center ${config.bg}`}>
         <div className="text-6xl mb-4">{won ? '🏆' : '💔'}</div>
-        <h2 className="text-3xl font-black text-white mb-2">{won ? 'You Win!' : 'You Lose!'}</h2>
-        <p className={`text-sm font-bold uppercase tracking-wider ${config.color}`}>{config.icon} {config.label}</p>
+        <h2 className="text-3xl font-black text-white mb-3">{won ? 'You Win!' : 'You Lose!'}</h2>
+        <div className={`flex items-center gap-2 px-5 py-2 rounded-full border ${config.cardBorder} ${config.cardBg}`}>
+          <span className="text-xl">{config.icon}</span>
+          <span className={`font-black uppercase tracking-widest text-sm ${config.color}`}>{config.label}</span>
+        </div>
         <p className="text-gray-400 mt-4 text-sm">
           {room.winner === 'mafia' ? 'The Mafia took over the city.' : 'The town eliminated all Mafia members.'}
         </p>
@@ -85,11 +92,17 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
 
   return (
     <div className={`min-h-dvh flex flex-col p-4 pb-8 ${active ? config.bg : 'phase-night'}`}>
-      {/* Role Badge */}
-      <div className="text-center pt-6 pb-4">
-        <div className="text-4xl mb-2">{config.icon}</div>
-        <div className={`text-lg font-black uppercase tracking-widest ${config.color}`}>{config.label}</div>
-        <div className="text-gray-500 text-xs mt-1">Round {room.round}</div>
+      {/* Role Header */}
+      <div className={`rounded-2xl border ${config.cardBorder} ${config.cardBg} px-5 py-4 mt-4 mb-5 flex items-center gap-4`}>
+        <div className="text-5xl">{config.icon}</div>
+        <div>
+          <div className={`text-2xl font-black uppercase tracking-widest leading-none ${config.color}`}>{config.label}</div>
+          <div className="text-gray-400 text-xs mt-1">{config.desc}</div>
+        </div>
+        <div className="ml-auto text-right">
+          <div className="text-gray-500 text-xs uppercase tracking-wider">Round</div>
+          <div className="text-white font-bold text-lg">{room.round}</div>
+        </div>
       </div>
 
       {/* Phase-specific content */}
