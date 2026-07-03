@@ -1,13 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useRoom } from '@/hooks/useRoom';
-import { startGame } from '@/lib/game';
+import { startGame, removePlayer } from '@/lib/game';
 import GameScreen from '@/components/GameScreen';
 import LobbyScreen from '@/components/LobbyScreen';
 
 export default function RoomPage() {
   const { code } = useParams<{ code: string }>();
+  const router = useRouter();
   const { room, loading } = useRoom(code);
   const [playerId, setPlayerId] = useState('');
 
@@ -38,11 +39,9 @@ export default function RoomPage() {
   const player = room.players?.[playerId];
 
   if (!player) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center phase-night">
-        <p className="text-red-400">You are not in this room.</p>
-      </div>
-    );
+    // Kicked or left — send back to home
+    router.replace('/');
+    return null;
   }
 
   if (room.phase === 'lobby') {
@@ -50,8 +49,15 @@ export default function RoomPage() {
       <LobbyScreen
         room={room}
         playerId={playerId}
-        onStartGame={async (godId: string) => {
-          await startGame(code, godId);
+        onStartGame={async (godId, config) => {
+          await startGame(code, godId, config);
+        }}
+        onKick={async (targetId) => {
+          await removePlayer(code, targetId);
+        }}
+        onLeave={async () => {
+          await removePlayer(code, playerId);
+          router.replace('/');
         }}
       />
     );

@@ -1,4 +1,4 @@
-import { ref, set, get, update, push, onValue, off } from 'firebase/database';
+import { ref, set, get, update, push, remove, onValue, off } from 'firebase/database';
 import { db } from './firebase';
 import { Room, Player, Role, Phase, GameEvent } from '@/types/game';
 
@@ -13,17 +13,26 @@ export function generatePlayerId(): string {
 }
 
 // Assign roles randomly based on player count
-export function assignRoles(playerIds: string[], godId: string): Record<string, Role> {
+export interface RoleConfig {
+  mafiaCount: number;
+  policeCount: number;
+  doctorCount: number;
+}
+
+export function assignRoles(playerIds: string[], godId: string, config?: RoleConfig): Record<string, Role> {
   const nonGodPlayers = playerIds.filter(id => id !== godId);
   const count = nonGodPlayers.length;
 
   // Role distribution
-  const mafiaCount = Math.max(1, Math.floor(count / 5)); // 1 mafia per 5 players
+  const mafiaCount = config ? config.mafiaCount : Math.max(1, Math.floor(count / 5));
+  const policeCount = config ? config.policeCount : 1;
+  const doctorCount = config ? config.doctorCount : 1;
+  const civilianCount = count - mafiaCount - policeCount - doctorCount;
   const roles: Role[] = [
     ...Array(mafiaCount).fill('mafia'),
-    'police',
-    'doctor',
-    ...Array(Math.max(0, count - mafiaCount - 2)).fill('civilian'),
+    ...Array(policeCount).fill('police'),
+    ...Array(doctorCount).fill('doctor'),
+    ...Array(Math.max(0, civilianCount)).fill('civilian'),
   ];
 
   // Shuffle
@@ -100,14 +109,14 @@ export async function joinRoom(roomCode: string, playerName: string): Promise<{ 
 }
 
 // Start game — assign roles, set god
-export async function startGame(roomCode: string, godPlayerId: string): Promise<void> {
+export async function startGame(roomCode: string, godPlayerId: string, config?: RoleConfig): Promise<void> {
   const snapshot = await get(ref(db, `rooms/${roomCode}/players`));
   const players: Record<string, Player> = snapshot.val();
   const playerIds = Object.keys(players);
 
   if (playerIds.length < 4) throw new Error('Need at least 4 players to start');
 
-  const roleMap = assignRoles(playerIds, godPlayerId);
+  const roleMap = assignRoles(playerIds, godPlayerId, config);
 
   const updates: Record<string, unknown> = {};
   playerIds.forEach(id => {
@@ -262,6 +271,11 @@ export async function checkWinCondition(roomCode: string): Promise<void> {
   } else if (aliveMafia.length >= aliveTown.length) {
     await update(ref(db, `rooms/${roomCode}`), { phase: 'game_over', winner: 'mafia' });
   }
+}
+
+// Remove a player from the room (kick by host, or self-leave)
+export async function removePlayer(roomCode: string, playerId: string): Promise<void> {
+  await remove(ref(db, `rooms/${roomCode}/players/${playerId}`));
 }
 
 // Subscribe to room changes
