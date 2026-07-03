@@ -1,7 +1,7 @@
 'use client';
 import { Room, Phase, Player } from '@/types/game';
 import { castMafiaVote, doctorSave, policeCheck, castDayVote } from '@/lib/game';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Props {
   room: Room;
@@ -28,6 +28,26 @@ const ROLE_CONFIG = {
 
 export default function RoleScreen({ room, playerId, roomCode }: Props) {
   const player = room.players?.[playerId];
+
+  const storageKey = `roleHidden_${roomCode}_${playerId}`;
+  const [roleHidden, setRoleHidden] = useState(false);
+  const [peeking, setPeeking] = useState(false);
+
+  // Read confirmation from sessionStorage once on mount
+  useEffect(() => {
+    setRoleHidden(sessionStorage.getItem(storageKey) === 'true');
+  }, [storageKey]);
+
+  function hideRole() {
+    sessionStorage.setItem(storageKey, 'true');
+    setRoleHidden(true);
+  }
+
+  function peek() {
+    setPeeking(true);
+    setTimeout(() => setPeeking(false), 4000);
+  }
+
   if (!player) return null;
 
   const role = player.role;
@@ -52,6 +72,8 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
 
   // SLEEP SCREEN — shown to all non-active roles during night phases
   if (['night', 'mafia_wake', 'police_wake', 'doctor_wake'].includes(phase) && !active) {
+    const showCard = !roleHidden || peeking;
+
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center phase-night p-6 text-center gap-8">
         <div>
@@ -60,12 +82,36 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
           <p className="text-gray-500 text-sm mt-1">Keep your eyes closed...</p>
         </div>
 
-        {/* Role card — large and clear */}
-        <div className={`w-full max-w-xs rounded-3xl border-2 ${config.cardBorder} ${config.cardBg} p-8 flex flex-col items-center gap-3`}>
-          <div className="text-7xl">{config.icon}</div>
-          <div className={`text-4xl font-black uppercase tracking-widest ${config.color}`}>{config.label}</div>
-          <div className="text-gray-400 text-sm">{config.desc}</div>
-        </div>
+        {showCard ? (
+          /* Role card — full reveal */
+          <div className="w-full max-w-xs flex flex-col items-center gap-4">
+            <div className={`w-full rounded-3xl border-2 ${config.cardBorder} ${config.cardBg} p-8 flex flex-col items-center gap-3`}>
+              <div className="text-7xl">{config.icon}</div>
+              <div className={`text-4xl font-black uppercase tracking-widest ${config.color}`}>{config.label}</div>
+              <div className="text-gray-400 text-sm">{config.desc}</div>
+            </div>
+            {!roleHidden && (
+              <button
+                onClick={hideRole}
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3 rounded-2xl transition text-sm"
+              >
+                Got it — hide my role
+              </button>
+            )}
+            {peeking && (
+              <p className="text-gray-500 text-xs">Role hidden again in a moment...</p>
+            )}
+          </div>
+        ) : (
+          /* Hidden state — just a peek button */
+          <button
+            onClick={peek}
+            className={`w-full max-w-xs border-2 border-dashed ${config.cardBorder} rounded-3xl py-8 flex flex-col items-center gap-2 opacity-40 hover:opacity-70 transition`}
+          >
+            <div className="text-3xl">👁</div>
+            <span className="text-gray-400 text-sm">Tap to peek your role</span>
+          </button>
+        )}
       </div>
     );
   }
