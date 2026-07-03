@@ -1,6 +1,6 @@
 'use client';
 import { Room, Phase, Player } from '@/types/game';
-import { castMafiaVote, doctorSave, policeCheck, castDayVote } from '@/lib/game';
+import { castMafiaVote, doctorSave, castPoliceVote, castDayVote } from '@/lib/game';
 import { useState, useEffect } from 'react';
 
 interface Props {
@@ -170,8 +170,10 @@ export default function RoleScreen({ room, playerId, roomCode }: Props) {
           {phase === 'police_wake' && role === 'police' && (
             <PoliceCheckPanel
               alivePlayers={alivePlayers}
-              myCheck={room.policeChecks?.[playerId] ?? null}
-              onCheck={(suspectId) => policeCheck(roomCode, playerId, suspectId)}
+              policeVotes={room.policeVotes || {}}
+              policeCheck={room.policeCheck}
+              playerId={playerId}
+              onVote={(suspectId) => castPoliceVote(roomCode, playerId, suspectId)}
             />
           )}
 
@@ -283,17 +285,21 @@ function MafiaVotePanel({
 }
 
 function PoliceCheckPanel({
-  alivePlayers, myCheck: check, onCheck
+  alivePlayers, policeVotes, policeCheck: check, playerId, onVote
 }: {
   alivePlayers: Player[];
-  myCheck: { suspectId: string; result: string } | null;
-  onCheck: (id: string) => void;
+  policeVotes: Record<string, string>;
+  policeCheck: { suspectId: string; result: string } | null;
+  playerId: string;
+  onVote: (id: string) => void;
 }) {
-  return (
-    <div className="space-y-4">
-      <p className="text-gray-400 text-sm text-center">Point to who you suspect is Mafia</p>
+  const myVote = policeVotes[playerId];
 
-      {check ? (
+  // Result revealed by god
+  if (check) {
+    return (
+      <div className="space-y-4">
+        <p className="text-gray-400 text-sm text-center">God has revealed the answer</p>
         <div className={`rounded-2xl p-5 text-center border animate-pop-in ${
           check.result === 'yes' ? 'border-red-500 bg-red-500/10' : 'border-green-500 bg-green-500/10'
         }`}>
@@ -302,18 +308,36 @@ function PoliceCheckPanel({
             {check.result === 'yes' ? 'Yes — They are Mafia!' : 'No — They are not Mafia.'}
           </p>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {alivePlayers.map(p => (
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-gray-400 text-sm text-center">Vote — who do you suspect is Mafia?</p>
+      <div className="space-y-2">
+        {alivePlayers.map(p => {
+          const votedFor = Object.values(policeVotes).filter(id => id === p.id).length;
+          return (
             <button
               key={p.id}
-              onClick={() => onCheck(p.id)}
-              className="w-full flex items-center gap-3 rounded-xl px-4 py-3 border border-white/10 bg-white/5 text-gray-300 hover:border-blue-500/50 transition"
+              onClick={() => onVote(p.id)}
+              className={`w-full flex items-center justify-between rounded-xl px-4 py-3 border transition ${
+                myVote === p.id
+                  ? 'border-blue-500 bg-blue-500/20 text-white'
+                  : 'border-white/10 bg-white/5 text-gray-300 hover:border-blue-500/40'
+              }`}
             >
               <span className="font-medium">{p.name}</span>
+              {votedFor > 0 && (
+                <span className="text-xs text-blue-400">{votedFor} vote{votedFor > 1 ? 's' : ''}</span>
+              )}
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
+      {myVote && (
+        <p className="text-center text-blue-400 text-sm">✓ Voted — waiting for God to reveal...</p>
       )}
     </div>
   );

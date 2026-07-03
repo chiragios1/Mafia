@@ -50,7 +50,8 @@ export interface Room {
   mafiaVotes: Record<string, string>; // voterId -> targetId
   dayVotes: Record<string, string>;   // voterId -> targetId
   doctorSave: string | null;          // playerId being saved
-  policeChecks: Record<string, PoliceCheck> | null; // keyed by police playerId
+  policeVotes: Record<string, string> | null;  // policePlayerId -> suspectId
+  policeCheck: PoliceCheck | null;             // resolved after god reveals
   nightKillTarget: string | null;
   tiedPlayers?: string[] | null;
   events: GameEvent[];

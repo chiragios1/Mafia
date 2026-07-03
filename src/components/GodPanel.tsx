@@ -1,6 +1,6 @@
 'use client';
 import { Room, Phase } from '@/types/game';
-import { setPhase, resolveNight, resolveDay, cancelRoom, restartGame } from '@/lib/game';
+import { setPhase, resolveNight, resolveDay, cancelRoom, restartGame, revealPoliceCheck } from '@/lib/game';
 
 interface Props {
   room: Room;
@@ -42,7 +42,8 @@ export default function GodPanel({ room, playerId, roomCode }: Props) {
 
   const mafiaVoteCount = Object.keys(room.mafiaVotes || {}).length;
   const totalMafia = aliveMafia.length;
-  const policeChecks = room.policeChecks || {};
+  const policeVotes = room.policeVotes || {};
+  const policeCheck = room.policeCheck;
 
   async function advance(next: Phase) {
     await setPhase(roomCode, next);
@@ -105,24 +106,42 @@ export default function GodPanel({ room, playerId, roomCode }: Props) {
           <div className="space-y-3">
             <p className="text-gray-400 text-sm">Say: <span className="text-white italic">"Police, open your eyes. Point to who you suspect."</span></p>
 
-            {Object.keys(policeChecks).length > 0 ? (
-              <div className="space-y-2">
-                {Object.entries(policeChecks).map(([policeId, check]) => (
-                  <div key={policeId} className={`rounded-xl p-3 border ${check.result === 'yes' ? 'bg-red-500/10 border-red-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
-                    <p className="text-gray-500 text-xs mb-1">{room.players?.[policeId]?.name} checked:</p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-white font-bold">{room.players?.[check.suspectId]?.name}</p>
-                      <p className={`text-sm font-bold ${check.result === 'yes' ? 'text-red-400' : 'text-green-400'}`}>
-                        {check.result === 'yes' ? '🔴 Mafia' : '🟢 Town'}
-                      </p>
-                    </div>
+            {/* Police votes */}
+            {Object.keys(policeVotes).length > 0 ? (
+              <div className="space-y-2 mb-3">
+                {Object.entries(policeVotes).map(([policeId, suspectId]) => (
+                  <div key={policeId} className="flex items-center justify-between bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2">
+                    <span className="text-blue-300 text-sm">{room.players?.[policeId]?.name}</span>
+                    <span className="text-white text-sm font-bold">→ {room.players?.[suspectId]?.name}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-center">
-                <p className="text-blue-300 text-sm animate-pulse">Waiting for police to identify suspects...</p>
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-center mb-3">
+                <p className="text-blue-300 text-sm animate-pulse">Waiting for police to vote...</p>
               </div>
+            )}
+
+            {/* Revealed result */}
+            {policeCheck && (
+              <div className={`rounded-xl p-3 border mb-3 ${policeCheck.result === 'yes' ? 'bg-red-500/10 border-red-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
+                <p className="text-gray-400 text-xs text-center mb-1">Revealed to police</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-white font-bold">{room.players?.[policeCheck.suspectId]?.name}</p>
+                  <p className={`text-sm font-bold ${policeCheck.result === 'yes' ? 'text-red-400' : 'text-green-400'}`}>
+                    {policeCheck.result === 'yes' ? '🔴 Mafia' : '🟢 Town'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {!policeCheck && Object.keys(policeVotes).length > 0 && (
+              <button
+                onClick={() => revealPoliceCheck(roomCode)}
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl transition mb-3"
+              >
+                👁 Reveal Answer to Police
+              </button>
             )}
 
             <button onClick={() => advance('doctor_wake')} className="w-full bg-green-700 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition glow-green">

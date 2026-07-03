@@ -70,7 +70,8 @@ export async function createRoom(hostName: string): Promise<{ roomCode: string; 
     mafiaVotes: {},
     dayVotes: {},
     doctorSave: null,
-    policeChecks: null,
+    policeVotes: null,
+    policeCheck: null,
     nightKillTarget: null,
     events: [],
     winner: null,
@@ -144,12 +145,33 @@ export async function doctorSave(roomCode: string, targetId: string): Promise<vo
   await update(ref(db, `rooms/${roomCode}`), { doctorSave: targetId });
 }
 
-// Police checks a suspect — system auto-resolves from actual role
-export async function policeCheck(roomCode: string, policePlayerId: string, suspectId: string): Promise<void> {
-  const snapshot = await get(ref(db, `rooms/${roomCode}/players/${suspectId}`));
-  const suspect: Player = snapshot.val();
+// Police casts a vote for who to check (like a mafia vote)
+export async function castPoliceVote(roomCode: string, policePlayerId: string, suspectId: string): Promise<void> {
+  await update(ref(db, `rooms/${roomCode}/policeVotes`), { [policePlayerId]: suspectId });
+}
+
+// God reveals the police check — system picks most-voted suspect and auto-resolves
+export async function revealPoliceCheck(roomCode: string): Promise<void> {
+  const snapshot = await get(ref(db, `rooms/${roomCode}`));
+  const room: Room = snapshot.val();
+
+  const votes = room.policeVotes || {};
+  const voteCounts: Record<string, number> = {};
+  Object.values(votes).forEach(id => {
+    voteCounts[id] = (voteCounts[id] || 0) + 1;
+  });
+
+  let suspectId: string | null = null;
+  let max = 0;
+  Object.entries(voteCounts).forEach(([id, count]) => {
+    if (count > max) { max = count; suspectId = id; }
+  });
+
+  if (!suspectId) return;
+
+  const suspect: Player = room.players[suspectId];
   const result = suspect.role === 'mafia' ? 'yes' : 'no';
-  await update(ref(db, `rooms/${roomCode}/policeChecks/${policePlayerId}`), { suspectId, result });
+  await update(ref(db, `rooms/${roomCode}/policeCheck`), { suspectId, result });
 }
 
 // Resolve night — apply kills/saves, move to day
@@ -203,7 +225,8 @@ export async function resolveNight(roomCode: string): Promise<void> {
   updates[`rooms/${roomCode}/phase`] = 'day';
   updates[`rooms/${roomCode}/mafiaVotes`] = {};
   updates[`rooms/${roomCode}/doctorSave`] = null;
-  updates[`rooms/${roomCode}/policeChecks`] = null;
+  updates[`rooms/${roomCode}/policeVotes`] = null;
+  updates[`rooms/${roomCode}/policeCheck`] = null;
   updates[`rooms/${roomCode}/nightKillTarget`] = killTarget;
 
   await update(ref(db), updates);
@@ -330,7 +353,8 @@ export async function restartGame(roomCode: string): Promise<void> {
   updates[`rooms/${roomCode}/mafiaVotes`] = {};
   updates[`rooms/${roomCode}/dayVotes`] = {};
   updates[`rooms/${roomCode}/doctorSave`] = null;
-  updates[`rooms/${roomCode}/policeChecks`] = null;
+  updates[`rooms/${roomCode}/policeVotes`] = null;
+  updates[`rooms/${roomCode}/policeCheck`] = null;
   updates[`rooms/${roomCode}/nightKillTarget`] = null;
   updates[`rooms/${roomCode}/tiedPlayers`] = null;
   updates[`rooms/${roomCode}/round`] = 1;
