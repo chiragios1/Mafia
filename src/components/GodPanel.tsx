@@ -1,6 +1,6 @@
 'use client';
 import { Room, Phase } from '@/types/game';
-import { setPhase, resolveNight, resolveDay, answerPoliceCheck, cancelRoom, restartGame } from '@/lib/game';
+import { setPhase, resolveNight, resolveDay, cancelRoom, restartGame } from '@/lib/game';
 
 interface Props {
   room: Room;
@@ -105,34 +105,17 @@ export default function GodPanel({ room, playerId, roomCode }: Props) {
           <div className="space-y-3">
             <p className="text-gray-400 text-sm">Say: <span className="text-white italic">"Police, open your eyes. Point to who you suspect."</span></p>
 
-            {policeCheck && policeCheck.result === 'pending' && (
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
-                <p className="text-blue-300 text-sm text-center mb-2">
-                  Police suspects: <strong>{room.players?.[policeCheck.suspectId]?.name}</strong>
+            {policeCheck ? (
+              <div className={`rounded-xl p-4 border ${policeCheck.result === 'yes' ? 'bg-red-500/10 border-red-500/30' : 'bg-green-500/10 border-green-500/30'}`}>
+                <p className="text-gray-400 text-xs uppercase tracking-wider mb-1 text-center">Police identified</p>
+                <p className="text-white font-bold text-center text-lg">{room.players?.[policeCheck.suspectId]?.name}</p>
+                <p className={`text-center text-sm font-bold mt-1 ${policeCheck.result === 'yes' ? 'text-red-400' : 'text-green-400'}`}>
+                  {policeCheck.result === 'yes' ? '🔴 Is Mafia' : '🟢 Is not Mafia'}
                 </p>
-                <p className="text-gray-400 text-xs text-center mb-3">Is this player Mafia?</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => answerPoliceCheck(roomCode, 'yes')}
-                    className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-2 rounded-xl transition"
-                  >
-                    Yes (Mafia)
-                  </button>
-                  <button
-                    onClick={() => answerPoliceCheck(roomCode, 'no')}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-xl transition"
-                  >
-                    No (Town)
-                  </button>
-                </div>
               </div>
-            )}
-
-            {policeCheck && policeCheck.result !== 'pending' && (
+            ) : (
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-center">
-                <p className="text-blue-300 text-sm">
-                  Answer given: <strong className={policeCheck.result === 'yes' ? 'text-red-400' : 'text-green-400'}>{policeCheck.result?.toUpperCase()}</strong>
-                </p>
+                <p className="text-blue-300 text-sm animate-pulse">Waiting for police to identify a suspect...</p>
               </div>
             )}
 

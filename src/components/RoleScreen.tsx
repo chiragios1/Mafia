@@ -295,18 +295,14 @@ function PoliceCheckPanel({
     <div className="space-y-4">
       <p className="text-gray-400 text-sm text-center">Point to who you suspect is Mafia</p>
 
-      {check && check.result !== 'pending' ? (
-        <div className={`rounded-2xl p-5 text-center border ${
+      {check ? (
+        <div className={`rounded-2xl p-5 text-center border animate-pop-in ${
           check.result === 'yes' ? 'border-red-500 bg-red-500/10' : 'border-green-500 bg-green-500/10'
         }`}>
           <div className="text-3xl mb-2">{check.result === 'yes' ? '🔴' : '🟢'}</div>
           <p className="text-white font-bold">
             {check.result === 'yes' ? 'Yes — They are Mafia!' : 'No — They are not Mafia.'}
           </p>
-        </div>
-      ) : check && check.result === 'pending' ? (
-        <div className="rounded-2xl p-5 text-center border border-blue-500 bg-blue-500/10 animate-pulse">
-          <p className="text-blue-300">Waiting for God&apos;s answer...</p>
         </div>
       ) : (
         <div className="space-y-2">

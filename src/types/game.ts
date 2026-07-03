@@ -39,7 +39,7 @@ export interface GameEvent {
 
 export interface PoliceCheck {
   suspectId: string;
-  result: 'yes' | 'no' | 'pending';
+  result: 'yes' | 'no';
 }
 
 export interface Room {

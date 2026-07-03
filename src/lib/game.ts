@@ -144,14 +144,12 @@ export async function doctorSave(roomCode: string, targetId: string): Promise<vo
   await update(ref(db, `rooms/${roomCode}`), { doctorSave: targetId });
 }
 
-// Police checks a suspect
+// Police checks a suspect — system auto-resolves from actual role
 export async function policeCheck(roomCode: string, suspectId: string): Promise<void> {
-  await update(ref(db, `rooms/${roomCode}/policeCheck`), { suspectId, result: 'pending' });
-}
-
-// God answers police check
-export async function answerPoliceCheck(roomCode: string, result: 'yes' | 'no'): Promise<void> {
-  await update(ref(db, `rooms/${roomCode}/policeCheck`), { result });
+  const snapshot = await get(ref(db, `rooms/${roomCode}/players/${suspectId}`));
+  const suspect: Player = snapshot.val();
+  const result = suspect.role === 'mafia' ? 'yes' : 'no';
+  await update(ref(db, `rooms/${roomCode}/policeCheck`), { suspectId, result });
 }
 
 // Resolve night — apply kills/saves, move to day
